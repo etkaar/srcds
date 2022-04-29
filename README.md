@@ -1,5 +1,5 @@
 # SRCDS
-Script to manage one or multiple instances of Source Dedicated Servers (SRCDS), such as CS:GO or TF2. Written in DASH ([Debian Almquist Shell](https://wiki.archlinux.org/title/Dash)) to offer POSIX compliance.
+Script to manage one or multiple instances of Source Dedicated Servers (SRCDS), such as CS:GO or TF2. Written in Dash ([Debian Almquist Shell](https://wiki.archlinux.org/title/Dash)) to offer POSIX compliance.
 
 ## 1.0 Notes
 
