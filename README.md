@@ -19,13 +19,19 @@ tar -xzf main.tar.gz --strip-components=1
 rm main.tar.gz
 ```
 
+Create a lower privileged user for the gameservers:
+
+```
+useradd gameserver --no-create-home --home-dir /home/gameserver/srcds/instances --shell /usr/sbin/nologin
+```
+
 ---
 
 ## 3.0 Security
 
 Gameservers are running within a screen session. This makes it possible to both read from and write to the gameserver console.
 
-In order to make them available for easy reattachments by root (`screen -r`) or another higher privileged user, these screens are started by this very user. However, privileges are still always dropped for the actual gameserver process, which is started by a lower privileged user without shell access:
+In order to make them available for easy reattachments by root (`screen -r`) or another higher privileged user, these screens are started by this very user. However, privileges are still always dropped for the actual gameserver process, which is started by a lower privileged user (see conf/main.conf) without shell access:
 
 ```shell
 cd "$INSTANCE_PATH" && \
