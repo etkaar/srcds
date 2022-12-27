@@ -22,7 +22,7 @@ rm main.tar.gz
 Create a lower privileged user:
 
 ```
-useradd gameserver --no-create-home --home-dir /home/gameserver/srcds/instances --shell /usr/sbin/nologin
+useradd gameserver --no-create-home --home-dir /home/gameserver --shell /usr/sbin/nologin
 ```
 
 ---
