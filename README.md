@@ -19,10 +19,16 @@ tar -xzf main.tar.gz --strip-components=1
 rm main.tar.gz
 ```
 
-Create a lower privileged user:
+Then, create a lower privileged user:
 
 ```
 useradd gameserver --no-create-home --home-dir /home/gameserver --shell /usr/sbin/nologin
+```
+
+Update ownership:
+
+```
+chown -R gameserver:gameserver /home/gameserver
 ```
 
 ---
