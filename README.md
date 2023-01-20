@@ -17,6 +17,7 @@ cd /home/gameserver/srcds
 wget https://github.com/etkaar/srcds/archive/refs/heads/main.tar.gz
 tar -xzf main.tar.gz --strip-components=1
 rm main.tar.gz
+chmod 0700 app.sh
 ```
 
 Then, create a lower privileged user:
