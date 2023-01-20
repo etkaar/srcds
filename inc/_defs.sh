@@ -2,8 +2,7 @@
 : '''
 Managing Script :: Source Dedicated Server (srcds)
 
-Copyright (c) 2021-22 etkaar <https://github.com/etkaar/srcds>
-Version 1.0.0 (April, 29th 2022)
+Copyright (c) 2021-23 etkaar <https://github.com/etkaar/srcds>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -352,7 +351,7 @@ func_BLOCK_PROCESS() {
 	GLOBAL_PIDFILE="$PATH_FOR_PID_FILE/.$PROCESS_NAME.pid"
 
 	# Validate process is not already running
-	if [ -f "$GLOBAL_PIDFILE" ]
+	if [ -e "$GLOBAL_PIDFILE" ]
 	then
 		PID="$(cat "$GLOBAL_PIDFILE")"
 		
@@ -377,7 +376,7 @@ func_BLOCK_PROCESS() {
 
 # Remove pid file if exists
 func_RELEASE_PROCESS() {
-	if [ ! "$GLOBAL_PIDFILE" = "" ] && [ -f "$GLOBAL_PIDFILE" ]
+	if [ ! "$GLOBAL_PIDFILE" = "" ] && [ -e "$GLOBAL_PIDFILE" ]
 	then
 		rm "$GLOBAL_PIDFILE"
 	fi
