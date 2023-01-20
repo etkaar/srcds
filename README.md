@@ -12,7 +12,7 @@ This script was tested on Debian 11 Bullseye. It already works, but some feature
 In the following examples, we will use `/home/gameserver/srcds` as script path and `/home/gameserver/srcds/instances` (you can change that in `conf/main.conf`) for the gameservers. Thus, login with `root` permissions, manually download the code and move its content there:
 
 ```shell
-mkdir /home/gameserver/srcds
+mkdir -p /home/gameserver/srcds
 cd /home/gameserver/srcds
 wget https://github.com/etkaar/srcds/archive/refs/heads/main.tar.gz
 tar -xzf main.tar.gz --strip-components=1
