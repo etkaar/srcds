@@ -2,8 +2,8 @@
 : '''
 Managing Script :: Source Dedicated Server (srcds)
 
-Copyright (c) 2021-22 etkaar <https://github.com/etkaar/srcds>
-Version 1.0.0 (April, 29th 2022)
+Copyright (c) 2021-23 etkaar <https://github.com/etkaar/srcds>
+Version 1.0.1 (January, 20th 2023)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -133,7 +133,7 @@ local_VALIDATE_USER_AND_GROUP() {
 
 	if [ "$GROUP" = "" ]
 	then
-		GROUP=$USER
+		GROUP="$USER"
 	fi
 
 	# Ensure group exists
@@ -160,25 +160,24 @@ local_FORCE_SHELL_FOR_USER() {
 	fi
 }
 
-local_RESET_PERMISSIONS() {
-	return 0
-
-	: '''
+local_VALIDATE_INSTANCE_PERMISSIONS() {
 	UPDATE="$1"
+	SELECTED_INSTANCE_ID="$2"
+	SELECTED_INSTANCE_PATH="$CVAR_INSTANCES_PATH/$SELECTED_INSTANCE_ID"
 
 	if [ "$UPDATE" = "full" ]
 	then
 		# Change owner/group
-		chown -R $USER:$GROUP $APP_PATH
+		chown -R "$CVAR_USER:$CVAR_GROUP" "$SELECTED_INSTANCE_PATH"
 		
 		# Dirs and files
-		find $FIVEM_SERVER_DATA_PATH -type d -exec chmod 0770 -- {} +	
-		find $FIVEM_SERVER_DATA_PATH -type f -exec chmod 0660 -- {} +
+		find "$SELECTED_INSTANCE_PATH" -type d -exec chmod 0770 -- {} +	
+		find "$SELECTED_INSTANCE_PATH" -type f -exec chmod 0660 -- {} +
 	fi
 	
 	# Make specific files executable
-	chmod 0770 $INSTANCE_PATH/run.sh
-	'''
+	chmod 0770 "$INSTANCE_PATH/srcds_run"
+	chmod 0770 "$INSTANCE_PATH/srcds_linux"
 }
 
 local_INSTANCE_IS_INSTALLED() {
@@ -187,7 +186,7 @@ local_INSTANCE_IS_INSTALLED() {
 	
 	if [ -d "$SELECTED_INSTANCE_PATH" ]
 	then
-		if [ ! -f "$SELECTED_INSTANCE_PATH/srcds_linux" ] || [ ! -f "$SELECTED_INSTANCE_PATH/srcds_run" ]
+		if [ ! -e "$SELECTED_INSTANCE_PATH/srcds_linux" ] || [ ! -e "$SELECTED_INSTANCE_PATH/srcds_run" ]
 		then
 			# Something is wrong with the installation
 			return 2
@@ -220,6 +219,8 @@ func_ENSURE_STEAMCMD() {
 				func_PRINT_INFO "Downloaded SteamCMD:" "  $STEAMCMD_PATH" ""
 			fi
 			
+			chown -R "$CVAR_USER:$CVAR_GROUP" "$STEAMCMD_PATH"
+			
 			rm "$TMP_FILE_PATH"
 		fi
 	fi
@@ -228,6 +229,7 @@ func_ENSURE_STEAMCMD() {
 func_STEAMCMD_RUNSCRIPT() {
 	RUNSCRIPT_FILE_PATH="$1"
 	
+	setpriv --reuid="$CVAR_USER" --regid="$CVAR_GROUP" --clear-groups --reset-env -- \
 	"$STEAMCMD_PATH"/steamcmd.sh +runscript "$RUNSCRIPT_FILE_PATH" >> "$LOG_PATH/steamcmd.log"
 	rm "$RUNSCRIPT_FILE_PATH"
 }
@@ -330,7 +332,7 @@ local_INIT() {
 	# Debian 11 (Bullseye)
 	elif [ "$(lsb_release -sc)" = "bullseye" ]
 	then
-		DEPENDENCIES="gdb lib32gcc-s1"
+		DEPENDENCIES="gdb lib32gcc-s1 lib32ncurses6"
 	else
 		func_EXIT_ERROR 1 "Unknown Linux distribution. Run 'lsb_release --all' and open an issue on GitHub:" "  https://github.com/etkaar/srcds"
 	fi
@@ -349,6 +351,25 @@ local_INIT() {
 			func_EXIT_ERROR 1 "Cannot continue due to missing packages."
 		else
 			func_INSTALL_PACKAGES "$RESULT"
+		fi
+	fi
+	
+	# As SRCDS will look for version 5, we fix that by creating
+	# a symbolic link to version 6.
+	if [ "$(lsb_release -sc)" = "bullseye" ]
+	then
+		SYMLINK_SOURCE="/usr/lib32/libncurses.so.6"
+		SYMLINK_TARGET="/usr/lib32/libncurses.so.5"
+		
+		if [ -e "$SYMLINK_SOURCE" ]
+		then
+			if [ ! -e "$SYMLINK_TARGET" ] && [ ! -L "$SYMLINK_TARGET" ]
+			then
+				if ln -s "$SYMLINK_SOURCE" "$SYMLINK_TARGET"
+				then
+					func_PRINT_INFO "Symlink created:" "  $SYMLINK_SOURCE > $SYMLINK_TARGET"
+				fi
+			fi
 		fi
 	fi
 }
@@ -394,7 +415,7 @@ INSTANCE_PID_FILE="./.process.instance-$GIVEN_INSTANCE_ID.pid"
 
 local_START() {
 	# Reset permissions
-	local_RESET_PERMISSIONS
+	local_VALIDATE_INSTANCE_PERMISSIONS "full" "$GIVEN_INSTANCE_ID"
 
 	# Start process
 	cd "$INSTANCE_PATH" && \
@@ -476,7 +497,7 @@ case "$CMD" in
 	
 	check|cron)
 		# Process not running, but it should
-		if [ -f "$INSTANCE_PID_FILE" ] && [ "$INSTANCE_PROCESS_ID" = "" ]
+		if [ -e "$INSTANCE_PID_FILE" ] && [ "$INSTANCE_PROCESS_ID" = "" ]
 		then
 			func_STDOUT "Process not running, but it should. Trying to restart it:"
 			local_START
@@ -538,6 +559,11 @@ case "$CMD" in
 		then
 			func_EXIT_ERROR 1 "Instance '$GIVEN_INSTANCE_ID' not installed."
 		else
+			if [ ! "$INSTANCE_PROCESS_ID" = "" ]
+			then
+				func_EXIT_ERROR 1 "Cannot update instance '$GIVEN_INSTANCE_ID' while running."
+			fi
+		
 			func_ENSURE_STEAMCMD
 			
 			func_PRINT_INFO "Update of instance '$GIVEN_INSTANCE_ID' started."
@@ -550,7 +576,7 @@ case "$CMD" in
 	;;
 	
 	fix-permissions)
-		local_RESET_PERMISSIONS "full"
+		local_VALIDATE_INSTANCE_PERMISSIONS "full" "$GIVEN_INSTANCE_ID"
 	;;
 	
 	*)
