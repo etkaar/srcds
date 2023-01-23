@@ -97,7 +97,7 @@ internal_PRINT() {
 
 # STDOUT: Success
 func_PRINT_SUCCESS() {
-	internal_PRINT "1" "32" "$@"
+	internal_PRINT 1 "32" "$@"
 }
 
 # STDOUT: Info
@@ -151,6 +151,14 @@ func_EXIT_WARNING() {
 	func_TIDY_UP
 	
 	func_PRINT_WARNING "$@"
+	exit "$EXIT_CODE"
+}
+
+# Exist but tidy up before
+func_EXIT() {
+	EXIT_CODE="$1"
+	
+	func_TIDY_UP
 	exit "$EXIT_CODE"
 }
 
@@ -422,4 +430,86 @@ func_TIDY_UP() {
 	
 	# Delete .tmp dir if empty
 	rmdir "$TMP_PATH" 2>/dev/null
+}
+
+# Validate and change ownership of path
+func_VALIDATE_OWNERSHIP() {
+	CHECKPATH="$1"
+	USER="$2"
+	GROUP="$3"
+	
+	if [ ! "$(stat --format '%U:%G' "$CHECKPATH")" = "$USER:$GROUP" ]
+	then
+		if chown "$USER":"$GROUP" "$CHECKPATH"
+		then
+			return 1
+		fi
+	fi
+	
+	return 0
+}
+
+# Validate and change permissions of path. Permissions
+# are given in octal mode.
+func_VALIDATE_PERMISSIONS() {
+	CHECKPATH="$1"
+	PERMISSIONS="$2"
+	
+	if [ ! "$(stat --format '%a' "$CHECKPATH")" = "$PERMISSIONS" ]
+	then
+		if chmod "$PERMISSIONS" "$CHECKPATH"
+		then
+			return 1
+		fi
+	fi
+	
+	return 0
+}
+
+# Forces a specific shell for a user
+func_FORCE_SHELL_FOR_USER() {
+	USER="$1"
+	SHELL="$2"
+	
+	# Force shell for user. Usually you want to disable login for the
+	# unpriviligated user by using /usr/sbin/nologin (or /bin/false).
+	CURRENT_SHELL="$(getent passwd "$USER" | awk -F':' '{print $7}')"
+
+	if [ ! "$CURRENT_SHELL" = "$SHELL" ]
+	then
+		if usermod --shell "$SHELL" "$USER"
+		then
+			return 1
+		fi
+	fi
+	
+	return 0
+}
+
+# Waits for termination of a process
+func_WAIT_FOR_TERMINATION() {
+	PROCESS_ID="$1"
+	
+	# We sleep only 0.1 seconds, so we have to adjust this value.
+	TIMEOUT="$(expr "$2" \* 10)"
+	
+	SECONDS_LEFT=0
+	
+	# Check periodically if process was stopped
+	while [ "$SECONDS_LEFT" -lt "$TIMEOUT" ]
+	do
+		if kill -0 "$PROCESS_ID" 2>/dev/null
+		then
+			printf "."
+			sleep 0.1
+		else
+			# Terminated
+			return 0
+		fi
+		
+		SECONDS_LEFT="$(expr "$SECONDS_LEFT" + 1)"
+	done
+	
+	# Timeout
+	return 1
 }
