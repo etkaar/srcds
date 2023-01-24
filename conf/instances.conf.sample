@@ -1,14 +1,41 @@
-# Instance ID       Server App ID[1]     IPv4 Address          Port        Map             Max. Players     Status[2]          Priority
-example             232330               127.0.0.1             27015       cs_office       64               always-online      default
+# Instance ID    Server App ID[1]    IPv4 Address    Port    Map            Slots[2]  Status[3]        Priority[4]     CPU-Cores[5]    Arguments[6]
+example          232330              127.0.0.1       27015   cs_office      64        always-online    real-time       0-15            -sv_pure -debug
 
 # [1] Server App IDs
-#   232330 (Counter-Strike: Source)
-#   232290 (Day of Defeat: Source)
 #   232250 (Team Fortress 2)
+#   232290 (Day of Defeat: Source)
+#   232330 (Counter-Strike: Source)
+#   232370 (Half-Life 2: Deathmatch)
+#   4020 (Garry's Mod)
+#   740 (Counter-Strike: Global Offensive)
 #   ...
 #
 # See 'Linux Dedicated Server' in
 # https://developer.valvesoftware.com/wiki/Dedicated_Servers_List
 
-# [2] Status
-#   always-online: Gameserver is always restarted (gameserver crash, restart of the dedicated server, ...).
+# [2] Slots
+#  Maximum amount of players.
+
+# [3] Status
+#  always-online: Gameserver is always restarted (gameserver crash, restart of the dedicated server, ...).
+#  offline: Gameserver needs to be manually started. Does not automatically start or restart.
+
+# [4] Priority
+#  Changes the priority of the gameserver process.
+#
+#  default: The kernel will use the default policy SCHED_OTHER.
+#  real-time: Will set the policy for the process to SCHED_RR with a fixed priority of 1.
+#  
+
+# [5] CPU-Cores
+#   Can be used to bind the process to one or multiple logical CPU cores. This hasn't been useful so far,
+#   as the kernel's scheduler anyway tried to keep the core for a process, but with new CPUs splitting
+#   their cores into P- and E-Cores (Performance, Efficiency) that may be helpful.
+#
+#	default: Do not bind to specific CPU cores. The kernel scheduler will decide.
+#
+#	If not 'default' is used, then use the same format as can be seen in "man taskset" (see --cpu-list), so
+#   e.g. '0-2' for the first three cores or '2' for the third core or '0,2' for the first and third core.
+
+# [6] Arguments
+#   Additional arguments. Default is 'none'.
