@@ -1,0 +1,13 @@
+# Unfortunately ./srcds_run requires an additional "-game" parameter
+# with a shortname of the game, even if the AppID is already known
+# (e.g. "-game cstrike" for Server App ID 232330).
+#
+# You can manually add the required shortname here if missing.
+
+# Server App ID       Shortname
+232250                tf
+232290                dod
+232330                cstrike
+232370                hl2mp
+4020                  garrysmod
+740                   csgo
